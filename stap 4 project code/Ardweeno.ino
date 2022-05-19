@@ -3,6 +3,13 @@
 
 rgb_lcd lcd;
 
+
+
+/*
+ * Constante variabelen
+ */
+ 
+// Gamestates
 const int START = 0;
 const int PRIME = 1;
 const int SPELEN = 2;
@@ -11,30 +18,39 @@ const int KLAAR = 3;
 const int INACTIEF = 0;
 const int ACTIEF = 1;
 
-const int AAN = 0;
-const int UIT = 1;
-
-unsigned long timer = 0;
+const int UIT = 0;
+const int AAN = 1;
 
 
+/*
+ * Variabelen
+ */
+ 
+// Button States
 int knopLState;
 int knopMState;
 int knopRState;
 
+// States
 int gameState;
 int lampState;
 int toggleState;
 int knipperState;
 
+// Winstates
 int winState[4];
 int winStateRand;
 
+// Tijd & Optellen
+unsigned long timer = 0;
 int counter;
 
+// Knoppen
 int knopL = 6;
 int knopM = 5;
 int knopR = 4;
 
+// Lampjes
 int lampLB = 11;
 int lampRB = 9;
 int lampLO = 12;
@@ -49,17 +65,21 @@ Serial.begin(9600);
 
   lcd.begin(16, 2);
 
+  // Zet buttonstates
   knopLState = INACTIEF;
   knopMState = INACTIEF;
   knopRState = INACTIEF;
 
+  // Zet states
   gameState = START;
   lampState = INACTIEF;
   toggleState = ACTIEF;
   knipperState = INACTIEF;
 
+  // Zet counter
   counter = 0;
 
+  // Zet pinmodes
   pinMode(knopL, INPUT);
   pinMode(knopM, INPUT);
   pinMode(knopR, INPUT);
@@ -72,8 +92,10 @@ Serial.begin(9600);
 
 
 
+// Function om lampjes te togglen
 void toggleLamp(bool boolLampLB, bool boolLampRB, bool boolLampLO, bool boolLampRO)
 {
+  // Toggle lampje links boven
   if (boolLampLB == AAN)
   {
     if (digitalRead(lampLB) == LOW)
@@ -86,6 +108,7 @@ void toggleLamp(bool boolLampLB, bool boolLampRB, bool boolLampLO, bool boolLamp
     }
   }
 
+  // Toggle lampje rechts boven
   if (boolLampRB == AAN)
   {
     if (digitalRead(lampRB) == LOW)
@@ -98,6 +121,7 @@ void toggleLamp(bool boolLampLB, bool boolLampRB, bool boolLampLO, bool boolLamp
     }
   }
 
+  // Toggle lampje links onder
   if (boolLampLO == AAN)
   {
     if (digitalRead(lampLO) == LOW)
@@ -110,6 +134,7 @@ void toggleLamp(bool boolLampLB, bool boolLampRB, bool boolLampLO, bool boolLamp
     }
   }
 
+  // Toggle lampje rechts onder
   if (boolLampRO == AAN)
   {
     if (digitalRead(lampRO) == LOW)
@@ -125,17 +150,24 @@ void toggleLamp(bool boolLampLB, bool boolLampRB, bool boolLampLO, bool boolLamp
 
 
 
+
 void loop()
 {
+  /*
+   * Gamestate = Start
+   */
   if (gameState == START)
   {
+    // Zet schermpje op menustand
     lcd.setCursor(0, 0);
     lcd.print("Press blue");
     lcd.setCursor(0, 1);
     lcd.print("to start");
 
+    // Randomize winstate
     winStateRand = rand() % 7;
 
+    // Verschillende winstates (0 = LB, 1 = RB, 2 = LO, 3 = RO)
     switch(winStateRand)
     {
       case 0:
@@ -182,6 +214,7 @@ void loop()
         break;
     }
 
+    // Als knopM is ingedrukt, zet gamestate op prime
     if (digitalRead(knopM) == HIGH)
     {
       gameState = PRIME;
@@ -189,19 +222,28 @@ void loop()
   }
 
 
+
+  /*
+   * Gamestate = Prime
+   */
   if (gameState == PRIME)
   {
     if (digitalRead(knopM) == LOW)
     {
+      // Zet gamestate op spelen
       gameState = SPELEN;
       lcd.clear();
 
+
+      // Laat uitleg zien op schermpje
       lcd.setCursor(0,0);
       lcd.print("0 = off");
 
       lcd.setCursor(0,1);
       lcd.print("1 = on");
 
+
+      // Laat goede combinatie zien op schermpje
       lcd.setCursor(14,0);
       lcd.print(winState[0]);
 
@@ -217,6 +259,10 @@ void loop()
   }
 
 
+
+  /*
+   * Gamestate = Spelen
+   */
   if (gameState == SPELEN)
   {
     if (knopLState == INACTIEF)
@@ -276,7 +322,7 @@ void loop()
     }
 
 
-
+    // Toggled lampje LB & lampje RO
     if (knopLState == ACTIEF)
     {
       if (lampState == ACTIEF)
@@ -287,8 +333,7 @@ void loop()
       }
     }
 
-
-    // Togglet lamp RB & lamp LO
+    // Toggled lampje RB & lampje LO
     if (knopMState == ACTIEF)
     {
       if (lampState == ACTIEF)
@@ -299,7 +344,7 @@ void loop()
       }
     }
 
-
+    // Toggled lampje LB & lampje LO
     if (knopRState == ACTIEF)
     {
       if (lampState == ACTIEF)
@@ -311,8 +356,8 @@ void loop()
     }
 
 
-
-    if (digitalRead(lampLB) == LOW && digitalRead(lampRB) == HIGH && digitalRead(lampLO) == LOW && digitalRead(lampRO) == HIGH)
+    // Checkt of de winstate is behaald
+    if (digitalRead(lampLB) == winState[0] && digitalRead(lampRB) == winState[1] && digitalRead(lampLO) == winState[2] && digitalRead(lampRO) == winState[3])
     {
       lcd.clear();
       gameState = KLAAR;
@@ -322,12 +367,17 @@ void loop()
 
 
 
+  /*
+   * Gamestate = Klaar
+   */
   if (gameState == KLAAR)
   {
+    // Laat winbericht op schermpje zien
     lcd.setCursor(0, 0);
     lcd.print("YOU WON!");
 
 
+    // Voorbereiding op opnieuw starten
     if (millis() - timer >= 250 && counter >= 12) 
     {
       digitalWrite(lampLO, LOW);
@@ -342,15 +392,17 @@ void loop()
       lcd.clear();
     }
 
+    // Wacht met knipperen tot 2 seconden na winnen
     if (millis() - timer >= 2000)
     {
       knipperState = ACTIEF;
       timer = millis();
     }
 
+    // Knippert winstand lampjes
     if (millis() - timer >= 250 && knipperState == ACTIEF)
     {
-      toggleLamp(UIT, AAN, UIT, AAN);
+      toggleLamp(winState[0], winState[1], winState[2], winState[3]);
       timer = millis();
       counter++;
     }
